@@ -1,0 +1,9 @@
+paddlepaddle
+paddleocr
+numpy
+scipy
+matplotlib
+streamlit
+requests
+jinja2
+python-dotenv

@@ -1,0 +1,2 @@
+
+{"type":"linear","x_col":"T(N)","y_col":"f_c(Hz)","slope":1.4182226303438419,"intercept":34.47999999999999,"slope_err":0.09433997046606594,"intercept_err":3.0666376810224447,"r_squared":0.9868992332005954,"reduced_chi2":8.549333333333331,"figure_hint":"线性拟合图"}

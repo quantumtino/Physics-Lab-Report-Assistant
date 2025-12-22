@@ -1,0 +1,79 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 环境变量文件（包含API密钥等敏感信息）
+.env
+.env.local
+.env.*.local
+.env*.secret
+secrets.json
+
+# 测试文件
+test/
+testllm.py
+test*.py
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 操作系统
+.DS_Store
+Thumbs.db
+
+# 生成的图像文件（可选：如果体积过大可以忽略）
+plots/
+*.png
+*.jpg
+*.jpeg
+
+# 日志文件
+*.log
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb
+
+# Streamlit
+.streamlit/secrets.toml
+streamlit_cache/
+
+# 临时文件
+temp/
+tmp/
+*.tmp
+
+# 数据文件（如果包含敏感信息）
+data/
+*.csv
+*.xlsx
+*.xls
+
+# 缓存
+*.cache
+.cache/
