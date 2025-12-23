@@ -14,9 +14,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # 导入自定义模块
-from ocr_module import OCRProcessor
-from analysis_module import DataAnalyzer
 from latex_generator import LatexGenerator
+from analysis_module import DataAnalyzer
 from llm_integration import LLMProcessor
 
 # 设置页面配置

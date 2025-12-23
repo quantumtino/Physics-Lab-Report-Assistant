@@ -1,9 +1,9 @@
-paddlepaddle
-paddleocr
 numpy
 scipy
 matplotlib
 streamlit
 requests
-jinja2
+pandas
 python-dotenv
+openai
+pillow
