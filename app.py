@@ -17,6 +17,7 @@ load_dotenv()
 from latex_generator import LatexGenerator
 from analysis_module import DataAnalyzer
 from llm_integration import LLMProcessor
+from uncertainty_calculator import UncertaintyCalculator, validate_measurement_data
 
 # 设置页面配置
 st.set_page_config(
@@ -42,6 +43,18 @@ if 'context_initialized' not in st.session_state:
     st.session_state.context_initialized = False
 if 'selected_model' not in st.session_state:
     st.session_state.selected_model = "qwen-flash"  # 默认模型
+if 'uncertainty_conversation' not in st.session_state:
+    st.session_state.uncertainty_conversation = []
+if 'uncertainty_measurements' not in st.session_state:
+    st.session_state.uncertainty_measurements = {}
+if 'uncertainty_formula' not in st.session_state:
+    st.session_state.uncertainty_formula = None
+if 'uncertainty_analysis_result' not in st.session_state:
+    st.session_state.uncertainty_analysis_result = None
+if 'clear_uncertainty_inputs' not in st.session_state:
+    st.session_state.clear_uncertainty_inputs = False
+if 'show_add_success' not in st.session_state:
+    st.session_state.show_add_success = False
 
 def main():
     st.title("🔬 物理实验报告助手")
@@ -49,7 +62,7 @@ def main():
     
     # 创建侧边栏导航
     st.sidebar.header("📄 功能导航")
-    nav_options = ["OCR识别", "数据分析", "LLM协作"]
+    nav_options = ["OCR识别", "数据分析", "误差分析", "LLM协作"]
     
     # 默认显示第一页，之后记住用户选择
     current = st.session_state.get("current_page", nav_options[0])
@@ -61,11 +74,13 @@ def main():
     # 显示步骤提示
     st.sidebar.divider()
     if current == "OCR识别":
-        st.sidebar.info("📍 步骤 1/3\n提取实验数据表格")
+        st.sidebar.info("📍 步骤 1/4\n提取实验数据表格")
     elif current == "数据分析":
-        st.sidebar.info("📍 步骤 2/3\n拟合分析与可视化")
+        st.sidebar.info("📍 步骤 2/4\n拟合分析与可视化")
+    elif current == "误差分析":
+        st.sidebar.info("📍 步骤 3/4\n不确定度分析")
     elif current == "LLM协作":
-        st.sidebar.info("📍 步骤 3/3\n撰写实验报告")
+        st.sidebar.info("📍 步骤 4/4\n撰写实验报告")
     st.sidebar.divider()
     
     # Radio 选择导航（用户点击时更新 current_page）
@@ -76,6 +91,8 @@ def main():
         ocr_page()
     elif page == "数据分析":
         analysis_page()
+    elif page == "误差分析":
+        uncertainty_page()
     elif page == "LLM协作":
         llm_page_new()
 
@@ -141,6 +158,254 @@ def ocr_page():
             os.unlink(image_path)
         except:
             pass
+
+def uncertainty_page():
+    """
+    对话式误差分析页面（简洁版）
+    流程：先填测量数据与不确定度 → 输入公式 → 系统调用符号工具计算 → 简要回复
+    """
+    st.header("🎯 误差与不确定度分析")
+    st.caption("单条录入物理量（符号、数值、单位、不确定度），系统会自动规范公式并调用符号工具计算。")
+
+    if "uncertainty_table" not in st.session_state:
+        st.session_state.uncertainty_table = []
+    if "uncertainty_summary" not in st.session_state:
+        st.session_state.uncertainty_summary = None
+    if "clear_uncertainty_inputs" not in st.session_state:
+        st.session_state.clear_uncertainty_inputs = False
+    if "show_add_success" not in st.session_state:
+        st.session_state.show_add_success = False
+
+    # 表单式录入
+    st.subheader("📋 逐项录入测量量")
+    st.caption("一次添加一个量:符号、数值、单位、A类σ、B类σ。重复同名会覆盖。")
+    
+    # 使用计数器强制重置表单
+    if "form_counter" not in st.session_state:
+        st.session_state.form_counter = 0
+    
+    with st.form(f"uncertainty_form_{st.session_state.form_counter}"):
+        c1, c2, c3, c4, c5 = st.columns([1.2, 1.2, 1, 1, 1])
+        var_name = c1.text_input("符号", placeholder="m, v, R", key=f"var_name_{st.session_state.form_counter}")
+        var_value = c2.text_input("数值", placeholder="0.0", key=f"var_value_{st.session_state.form_counter}")
+        var_unit = c3.text_input("单位", placeholder="kg, m/s", key=f"var_unit_{st.session_state.form_counter}")
+        var_a = c4.text_input("A类(σ)", placeholder="0.0", key=f"var_a_{st.session_state.form_counter}")
+        var_b = c5.text_input("B类(σ)", placeholder="0.0", key=f"var_b_{st.session_state.form_counter}")
+        submitted = st.form_submit_button("保存/更新该变量", type="primary", use_container_width=True)
+    
+    # 显示成功消息（如果有）
+    if st.session_state.show_add_success:
+        st.success("✅ 已成功添加/更新变量！")
+        st.session_state.show_add_success = False
+
+    if submitted:
+        name = var_name.strip()
+        if not name:
+            st.warning("请先填写变量符号")
+        else:
+            try:
+                val = float(var_value.strip()) if var_value.strip() else 0.0
+                a_val = float(var_a.strip()) if var_a.strip() else 0.0
+                b_val = float(var_b.strip()) if var_b.strip() else 0.0
+                
+                entry = {
+                    "变量": name,
+                    "数值": val,
+                    "单位": var_unit.strip(),
+                    "A类(σ)": a_val,
+                    "B类(σ)": b_val
+                }
+                # 覆盖同名变量
+                replaced = False
+                for idx, row in enumerate(st.session_state.uncertainty_table):
+                    if row.get("变量", "").strip() == name:
+                        st.session_state.uncertainty_table[idx] = entry
+                        replaced = True
+                        break
+                if not replaced:
+                    st.session_state.uncertainty_table.append(entry)
+                st.session_state.uncertainty_analysis_result = None
+                st.session_state.uncertainty_summary = None
+                # 增加计数器以重置表单
+                st.session_state.form_counter += 1
+                st.session_state.show_add_success = True
+                st.rerun()
+            except ValueError:
+                st.error("数值格式错误，请输入有效数字")
+
+    # 已添加的测量量预览
+    st.markdown("**当前测量量**")
+    if st.session_state.uncertainty_table:
+        preview_df = pd.DataFrame(st.session_state.uncertainty_table)
+        st.dataframe(preview_df, use_container_width=True, height=240)
+
+        col_del = st.columns([2, 1, 1])
+        with col_del[0]:
+            st.caption("A类=统计误差，B类=系统误差；单位需一致。")
+        with col_del[1]:
+            remove_opt = st.selectbox("删除变量", options=["无"] + [row["变量"] for row in st.session_state.uncertainty_table], key="uncertainty_remove_opt")
+        with col_del[2]:
+            if st.button("🗑️ 删除所选") and remove_opt != "无":
+                st.session_state.uncertainty_table = [row for row in st.session_state.uncertainty_table if row.get("变量") != remove_opt]
+                st.session_state.uncertainty_analysis_result = None
+                st.session_state.uncertainty_summary = None
+                st.rerun()
+
+        if st.button("♻️ 清空全部数据", type="secondary"):
+            st.session_state.uncertainty_table = []
+            st.session_state.uncertainty_measurements = {}
+            st.session_state.uncertainty_analysis_result = None
+            st.session_state.uncertainty_summary = None
+            st.rerun()
+    else:
+        st.info("暂无测量量，请用上方表单添加。")
+
+    # 整理表格为计算所需结构（供对话使用）
+    measurements = {}
+    for row in st.session_state.uncertainty_table:
+        name = str(row.get("变量", "")).strip()
+        if not name:
+            continue
+        measurements[name] = {
+            "value": float(row.get("数值", 0) or 0),
+            "unit": row.get("单位", ""),
+            "a_uncertainty": float(row.get("A类(σ)", 0) or 0),
+            "b_uncertainty": float(row.get("B类(σ)", 0) or 0),
+        }
+    st.session_state.uncertainty_measurements = measurements
+
+    # 聊天区（输入框在下）
+    st.divider()
+    st.subheader("💬 不确定度对话")
+    st.caption("在下方对话中描述实验公式和测量情况，AI会引导你完成不确定度计算。")
+    chat_container = st.container()
+    if not st.session_state.uncertainty_conversation:
+        st.session_state.uncertainty_conversation = [
+            {
+                "role": "assistant",
+                "content": "你好！我会帮你完成不确定度分析。\n\n请告诉我：\n1. 实验的计算公式（可以用自然语言描述，如'动能等于二分之一乘以质量乘以速度平方'）\n2. 各变量的测量值、单位和不确定度（A类和B类）\n\n我会帮你规范公式并调用符号工具计算。"
+            }
+        ]
+
+    with chat_container:
+        for msg in st.session_state.uncertainty_conversation:
+            with st.chat_message(msg["role"], avatar="🤖" if msg["role"] == "assistant" else "👤"):
+                st.markdown(msg["content"])
+
+    user_msg = st.chat_input("描述公式或提问（例如：计算动能，已知质量和速度）")
+    if user_msg:
+        st.session_state.uncertainty_conversation.append({"role": "user", "content": user_msg})
+        try:
+            llm = LLMProcessor(model=st.session_state.selected_model)
+            with st.chat_message("assistant", avatar="🤖"):
+                ph = st.empty()
+                resp = ""
+                thinking_text = ""
+                tool_calls_text = ""
+                
+                # 判断是否使用plus模型并启用深度思考
+                enable_thinking = "plus" in st.session_state.selected_model
+                
+                # 调用智能不确定度对话（可能触发计算）
+                for chunk in llm.smart_uncertainty_conversation(
+                    user_msg,
+                    st.session_state.uncertainty_conversation[:-1],
+                    measurements,
+                    enable_thinking=enable_thinking
+                ):
+                    if isinstance(chunk, dict):
+                        chunk_type = chunk.get("type", "")
+                        chunk_text = chunk.get("text", "")
+                        
+                        if chunk_type == "thinking":
+                            thinking_text += chunk_text
+                        elif chunk_type == "content":
+                            resp += chunk_text
+                        elif chunk_type == "tool_call":
+                            # 显示MCP工具调用
+                            tool_calls_text += f"\n\n🔧 **调用工具**: {chunk.get('tool_name', 'unknown')}\n"
+                        elif chunk_type == "calculation_result":
+                            # 保存计算结果
+                            calc_result = chunk.get("result")
+                            if calc_result and calc_result.get("success"):
+                                st.session_state.uncertainty_analysis_result = calc_result
+                                st.session_state.uncertainty_summary = calc_result.get("summary", "")
+                                
+                                # 显示详细计算结果
+                                result_display = f"\n\n---\n\n🎯 **计算结果**\n\n"
+                                result_display += f"**原始公式**: {calc_result.get('raw_formula', 'N/A')}\n\n"
+                                result_display += f"**规范化公式**: `{calc_result.get('normalized_formula', 'N/A')}`\n\n"
+                                
+                                # 显示LaTeX公式
+                                if calc_result.get('partial_derivatives'):
+                                    result_display += "**偏导数**:\n\n"
+                                    for var, deriv_info in calc_result['partial_derivatives'].items():
+                                        latex_expr = deriv_info.get('latex', '')
+                                        value = deriv_info.get('value', 0)
+                                        result_display += f"- $\\frac{{\\partial f}}{{\\partial {var}}} = {latex_expr}$ ≈ {value:.4g}\n"
+                                    result_display += "\n"
+                                
+                                # 结果与不确定度
+                                result_display += f"**最终结果**: {calc_result.get('result', 0):.6g} ± {calc_result.get('uncertainty_total', 0):.4g}\n\n"
+                                result_display += f"- A类不确定度: {calc_result.get('uncertainty_a', 0):.4g}\n"
+                                result_display += f"- B类不确定度: {calc_result.get('uncertainty_b', 0):.4g}\n"
+                                result_display += f"- 相对不确定度: {calc_result.get('relative_uncertainty', 0):.2%}\n\n"
+                                
+                                # 各变量贡献
+                                if calc_result.get('contributions'):
+                                    result_display += "**各变量贡献占比**:\n\n"
+                                    sorted_contrib = sorted(calc_result['contributions'].items(), key=lambda x: x[1], reverse=True)
+                                    for var, contrib in sorted_contrib:
+                                        bar_length = int(contrib / 5)  # 每5%一个方块
+                                        bar = "█" * bar_length
+                                        result_display += f"- **{var}**: {contrib:.1f}% {bar}\n"
+                                
+                                resp += result_display
+                    else:
+                        resp += str(chunk)
+                    
+                    # 实时显示
+                    display_parts = []
+                    if thinking_text:
+                        display_parts.append(f"🧠 **思考过程**\n\n```\n{thinking_text}\n```")
+                    if tool_calls_text:
+                        display_parts.append(tool_calls_text)
+                    if resp:
+                        display_parts.append(resp)
+                    
+                    display_text = "\n\n---\n\n".join(display_parts) + "▌"
+                    ph.markdown(display_text, unsafe_allow_html=True)
+                
+                # 最终显示
+                display_parts = []
+                if thinking_text:
+                    display_parts.append(f"🧠 **思考过程**\n\n```\n{thinking_text}\n```")
+                if tool_calls_text:
+                    display_parts.append(tool_calls_text)
+                if resp:
+                    display_parts.append(resp)
+                
+                display_text = "\n\n---\n\n".join(display_parts)
+                ph.markdown(display_text, unsafe_allow_html=True)
+                
+                st.session_state.uncertainty_conversation.append({"role": "assistant", "content": resp})
+            st.rerun()
+        except Exception as e:
+            st.error(f"LLM 交互失败: {str(e)}")
+
+    # 传递结果到写作页（移到对话下方）
+    st.divider()
+    if st.button("📝 传给写作AI", disabled=st.session_state.uncertainty_analysis_result is None, use_container_width=True, type="primary"):
+        if st.session_state.uncertainty_analysis_result:
+            # 同时传递计算结果和对话历史
+            st.session_state.passed_uncertainty_result = st.session_state.uncertainty_analysis_result
+            st.session_state.passed_uncertainty_conversation = st.session_state.uncertainty_conversation
+            st.success("✅ 已将误差分析结果和对话历史传递到写作页面！")
+            # 自动切换到LLM协作页
+            st.session_state["current_page"] = "LLM协作"
+            st.rerun()
+        else:
+            st.warning("请先完成不确定度计算后再传递结果")
 
 def analysis_page():
     st.header("📈 数据分析与拟合")
@@ -869,6 +1134,33 @@ def llm_page_new():
                 st.dataframe(df, height=120, use_container_width=True)
         
         st.divider()
+        st.subheader("🎯 误差分析")
+        if st.session_state.get("uncertainty_analysis_result"):
+            unc_result = st.session_state.uncertainty_analysis_result
+            st.success("✅ 已完成计算")
+            st.metric(
+                "结果",
+                f"{unc_result.get('result', 0):.4g} ± {unc_result.get('uncertainty_total', 0):.3g}"
+            )
+            st.metric(
+                "相对不确定度",
+                f"{unc_result.get('relative_uncertainty', 0):.2%}"
+            )
+            with st.expander("详细信息", expanded=False):
+                st.markdown(f"**公式**: {unc_result.get('raw_formula', 'N/A')}")
+                st.markdown(f"**规范式**: {unc_result.get('normalized_formula', 'N/A')}")
+                if unc_result.get('contributions'):
+                    st.markdown("**贡献占比**:")
+                    for var, contrib in unc_result['contributions'].items():
+                        st.markdown(f"  - {var}: {contrib:.1f}%")
+                if unc_result.get('summary'):
+                    st.markdown("---")
+                    st.markdown("**AI总结**:")
+                    st.markdown(unc_result['summary'])
+        else:
+            st.info("暂无计算结果")
+        
+        st.divider()
         st.subheader("📈 拟合结果")
         if analysis_payload:
             fit_type = analysis_payload.get('type', '未知')
@@ -1042,8 +1334,10 @@ def llm_page_new():
                         thinking_text = ""
                         # 判断是否使用plus模型并启用深度思考
                         enable_thinking = "plus" in st.session_state.selected_model
+                        uncertainty_result = st.session_state.get("passed_uncertainty_result")
+                        uncertainty_conversation = st.session_state.get("passed_uncertainty_conversation")
                         
-                        for chunk_obj in llm.generate_act_response(df, analysis_payload, st.session_state.get("chat_history", []), mod, enable_thinking=enable_thinking):
+                        for chunk_obj in llm.generate_act_response(df, analysis_payload, st.session_state.get("chat_history", []), mod, enable_thinking=enable_thinking, uncertainty_result=uncertainty_result, uncertainty_conversation=uncertainty_conversation):
                             if isinstance(chunk_obj, dict):
                                 chunk_type = chunk_obj.get("type", "")
                                 chunk_text = chunk_obj.get("text", "")

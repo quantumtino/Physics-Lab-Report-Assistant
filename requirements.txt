@@ -7,3 +7,6 @@ pandas
 python-dotenv
 openai
 pillow
+sympy
+jinja2
+plotly
