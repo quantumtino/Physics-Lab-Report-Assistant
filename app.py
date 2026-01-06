@@ -60,6 +60,17 @@ def main():
     st.title("🔬 物理实验报告助手")
     st.markdown("---")
     
+    # 侧边栏品牌与联系信息
+    try:
+        st.sidebar.image("icon.jpg", width=96)
+    except Exception:
+        st.sidebar.write(":mag: icon 加载失败")
+    st.sidebar.markdown("**联系**")
+    st.sidebar.markdown("- 邮箱: quantum-liu@outlook.com")
+    st.sidebar.markdown("**GitHub**")
+    st.sidebar.markdown("- [quantumtino/Physics-Lab-Report-Assistant](https://github.com/quantumtino/Physics-Lab-Report-Assistant.git)")
+    st.sidebar.divider()
+
     # 创建侧边栏导航
     st.sidebar.header("📄 功能导航")
     nav_options = ["OCR识别", "数据分析", "误差分析", "LLM协作"]
