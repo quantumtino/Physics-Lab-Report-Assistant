@@ -1,0 +1,99 @@
+```latex
+\documentclass[12pt]{article}
+\usepackage{geometry}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{caption}
+\usepackage{graphicx}
+\usepackage{float}
+
+\geometry{margin=1in}
+
+\title{Experiment Report: Resonance Frequency Analysis in a Tensioned String System}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section*{Objective}
+The objective of this experiment is to investigate the relationship between tension (\(T\)) applied to a string and its resonant frequencies, specifically the experimental frequency (\(f_e\)) and the calculated frequency (\(f_c\)). The fractional deviation \(\Delta f / f\) between these two values is analyzed to assess the accuracy of theoretical predictions.
+
+\section*{Theory}
+For a stretched string fixed at both ends, the fundamental resonant frequency is given by:
+\[
+f = \frac{1}{2L} \sqrt{\frac{T}{\mu}}
+\]
+where:
+\begin{itemize}
+  \item \(f\) is the resonant frequency (Hz),
+  \item \(T\) is the tension in the string (N),
+  \item \(L\) is the length of the vibrating segment (m),
+  \item \(\mu\) is the linear mass density of the string (kg/m).
+\end{itemize}
+
+In this experiment, the theoretical frequency \(f_c\) is computed using known values of \(T\) and assumed constants for \(L\) and \(\mu\). The measured frequency \(f_e\) is obtained from experimental observations. The relative deviation \(\Delta f / f\) is defined as:
+\[
+\frac{\Delta f}{f} = \left| \frac{f_e - f_c}{f_c} \right|
+\]
+This quantity provides a measure of the discrepancy between theory and experiment.
+
+\section*{Data and Analysis}
+
+The following table presents the collected data:
+
+\begin{table}[H]
+\centering
+\caption{Measured and Calculated Resonant Frequencies vs. Applied Tension}
+\label{tab:data}
+\begin{tabular}{cccccc}
+\toprule
+\(T\) (N) & \(f_e\) (Hz) & \(f_c\) (Hz) & \(\Delta f / f\) \\
+\midrule
+9.801 & 45.4 & 49.2 & 0.08 \\
+19.602 & 64.3 & 67.4 & 0.05 \\
+29.403 & 78.7 & 83.7 & 0.06 \\
+39.204 & 90.9 & 91.9 & 0.01 \\
+49.005 & 101.6 & 107.8 & 0.06 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The average value of \(\Delta f / f\) is calculated as:
+\[
+\bar{\Delta f / f} = \frac{0.08 + 0.05 + 0.06 + 0.01 + 0.06}{5} = \frac{0.26}{5} = 0.052
+\]
+
+Thus, the average deviation is \(5.2\%\), indicating a generally good agreement between experimental and theoretical results, with the largest deviation occurring at the lowest tension.
+
+\section*{Uncertainty Analysis}
+Assuming that the primary sources of uncertainty are in the measurement of frequency (\(f_e\)) and tension (\(T\)), and given that the tension values are precise to ±0.001 N (from the provided data precision), we estimate the uncertainty in \(f_e\) to be approximately ±0.5 Hz based on typical digital frequency counter resolution.
+
+Using error propagation for the frequency formula:
+\[
+\frac{\Delta f}{f} \approx \frac{1}{2} \frac{\Delta T}{T} + \frac{1}{2} \frac{\Delta \mu}{\mu}
+\]
+Since \(\mu\) is assumed constant and known precisely, the dominant uncertainty comes from \(T\). For example, at \(T = 9.801\,\mathrm{N}\), \(\Delta T / T = 0.001 / 9.801 \approx 0.0001\), which contributes only about 0.005\% to the uncertainty — negligible compared to observed deviations.
+
+Therefore, the observed discrepancies are likely due to systematic effects such as:
+\begin{itemize}
+  \item Imperfect string uniformity,
+  \item Non-ideal boundary conditions (e.g., clamping not perfectly rigid),
+  \item Air resistance or damping,
+  \item Measurement timing errors during resonance detection.
+\end{itemize}
+
+\section*{Discussion}
+The results show that the experimental frequencies are consistently lower than the calculated ones, except at the highest tension where they are very close. This suggests a possible underestimation of the effective length or overestimation of the string's mass density in the theoretical model.
+
+Notably, the smallest deviation (\(0.01\)) occurs at \(T = 39.204\,\mathrm{N}\), suggesting optimal conditions near this tension. The increase in deviation at low tension may indicate greater sensitivity to small imperfections in setup or measurement noise.
+
+The overall trend of \(\Delta f / f\) shows no clear correlation with increasing tension, implying that the source of error is not purely proportional to \(T\). This supports the idea of systematic rather than random error.
+
+\section*{Conclusion}
+The experiment successfully demonstrates the dependence of resonant frequency on string tension, with experimental results showing reasonable agreement with theoretical predictions. The average fractional deviation is \(5.2\%\), which is within acceptable limits for undergraduate laboratory settings. Minor discrepancies are attributed to practical limitations such as non-ideal boundary conditions and measurement uncertainties. Future improvements could include more precise frequency measurement techniques and better control of string end constraints.
+
+\end{document}
+```
