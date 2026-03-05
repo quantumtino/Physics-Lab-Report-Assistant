@@ -1,0 +1,16 @@
+name: physics-lab-assistant
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  - numpy
+  - pandas
+  - matplotlib
+  - sympy
+  - python-dotenv
+  - openai
+  - pillow
+  - pip:
+      - customtkinter

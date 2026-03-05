@@ -1,0 +1,17 @@
+{
+  "method": "linear",
+  "selection_mode": "column",
+  "x_ref": "T (N)",
+  "y_ref": "f_c (Hz)",
+  "yerr_ref": null,
+  "used_points": 5,
+  "plot_title": "test",
+  "xlabel": "x",
+  "ylabel": "y",
+  "slope": 1.4182226303438414,
+  "intercept": 34.480000000000004,
+  "r_squared": 0.9868992332005954,
+  "slope_err": 0.094339970466066,
+  "intercept_err": 3.0666376810224465,
+  "chi2_red": 8.549333333333358
+}

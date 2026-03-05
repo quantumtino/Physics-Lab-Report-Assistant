@@ -1,0 +1,13 @@
+{
+    "python-envs.defaultEnvManager": "ms-python.python:conda",
+    "python-envs.defaultPackageManager": "ms-python.python:conda",
+    "terminal.integrated.defaultProfile.windows": "PowerShell (Conda)",
+    "terminal.integrated.profiles.windows": {
+        "PowerShell (Conda)": {
+            "source": "PowerShell",
+            "args": [
+                "-NoLogo"
+            ]
+        }
+    }
+}

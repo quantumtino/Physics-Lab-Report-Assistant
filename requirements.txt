@@ -1,0 +1,8 @@
+numpy
+pandas
+matplotlib
+sympy
+python-dotenv
+openai
+pillow
+customtkinter
