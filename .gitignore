@@ -1,0 +1,87 @@
+# ------------------------------
+# Python cache and build artifacts
+# ------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.nox/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+
+build/
+dist/
+site/
+*.egg-info/
+.eggs/
+
+# ------------------------------
+# Virtual env and local environment files
+# ------------------------------
+.venv/
+venv/
+env/
+ENV/
+.env
+.env.*
+*.env
+.python-version
+
+# ------------------------------
+# IDE/editor and debug logs
+# ------------------------------
+.vscode/
+.idea/
+*.swp
+*.swo
+*.tmp
+*.temp
+*.log
+logs/
+log/
+tmp/
+temp/
+debug/
+
+# ------------------------------
+# OS files
+# ------------------------------
+.DS_Store
+Thumbs.db
+
+# ------------------------------
+# Runtime local config / secrets
+# ------------------------------
+config.local.json
+config.local.*
+secrets.json
+PROJECT_CONTEXT_FOR_AI.md
+
+# ------------------------------
+# AI workflow artifacts (test workspace outputs)
+# Keep only project structure definitions like project.json
+# ------------------------------
+test/**/stage1/ocr_input/
+test/**/stage1/ocr_result.json
+test/**/stage1/table.csv
+
+test/**/stage2/analysis_input.csv
+test/**/stage2/analysis_result.json
+test/**/stage2/plots/
+
+test/**/stage3/**
+
+test/**/stage4/chat_history.json
+test/**/stage4/draft.md
+test/**/stage4/draft.tex
+test/**/stage4/*_latex.tex
+
+# ------------------------------
+# Optional temporary backups
+# ------------------------------
+*.bak
+*.orig
