@@ -65,6 +65,8 @@ PROJECT_CONTEXT_FOR_AI.md
 # AI workflow artifacts (test workspace outputs)
 # Keep only project structure definitions like project.json
 # ------------------------------
+test/
+
 test/**/stage1/ocr_input/
 test/**/stage1/ocr_result.json
 test/**/stage1/table.csv
