@@ -550,16 +550,29 @@ class LLMProcessor:
             "top_p": 0.8,
             "max_tokens": 2000,
             "stream": True,
+            "stream_options": {"include_usage": True},
         }
-        if enable_thinking and "plus" in self.model:
+        if enable_thinking and ("plus" in self.model or "max" in self.model):
             params["extra_body"] = {"enable_thinking": True}
 
         response = self.client.chat.completions.create(**params)
         for chunk in response:
-            if hasattr(chunk.choices[0].delta, "reasoning_content") and chunk.choices[0].delta.reasoning_content:
-                yield {"type": "thinking", "text": chunk.choices[0].delta.reasoning_content}
-            if hasattr(chunk.choices[0].delta, "content") and chunk.choices[0].delta.content:
-                yield {"type": "content", "text": chunk.choices[0].delta.content}
+            if getattr(chunk, "choices", None):
+                delta = chunk.choices[0].delta
+                if hasattr(delta, "reasoning_content") and delta.reasoning_content:
+                    yield {"type": "thinking", "text": delta.reasoning_content}
+                if hasattr(delta, "content") and delta.content:
+                    yield {"type": "content", "text": delta.content}
+            elif getattr(chunk, "usage", None):
+                usage = chunk.usage
+                yield {
+                    "type": "usage",
+                    "usage": {
+                        "prompt_tokens": getattr(usage, "prompt_tokens", None),
+                        "completion_tokens": getattr(usage, "completion_tokens", None),
+                        "total_tokens": getattr(usage, "total_tokens", None),
+                    },
+                }
 
     def smart_uncertainty_conversation(
         self,
